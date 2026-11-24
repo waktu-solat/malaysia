@@ -29,14 +29,19 @@ districts yet, so these are kept apart from JAKIM's `SGRnn` codes to avoid clash
 
 A copy of JAKIM e-Solat's 2027 schedule for every other zone, for when e-Solat
 is unavailable. Each file is JAKIM's response for 1 Jan – 31 Dec 2027, stored
-unchanged (fetched 24 Nov 2026).
+unchanged (fetched 24 Nov 2026), except for the WLY02 correction below.
 
-- **Included (47):** JHR01–04, KDH01–07, KTN01–02, MLK01, NGS01–03, PHG01–07,
-  PLS01, PNG01, PRK01–07, SWK01–09, TRG01–04, WLY01.
+- **Included (48):** JHR01–04, KDH01–07, KTN01–02, MLK01, NGS01–03, PHG01–07,
+  PLS01, PNG01, PRK01–07, SWK01–09, TRG01–04, WLY01–02.
+- **WLY02 (Labuan) correction:** JAKIM's 2027 data gives Maghrib as 06:28 on
+  20–25 May 2027, before Subuh's end and the same as Dhuha. This copy has
+  18:28 on those six days; nothing else differs from JAKIM's response. 18:28 is
+  JAKIM's own WLY02 Maghrib for 20–25 May 2023, the year with the same
+  leap-year position (2023 and 2027 Maghrib agree on 354 of the other 359
+  days), and fits 19 May (18:28) and 26 May (18:29) of 2027.
 - **Not included yet:**
-  - SBH01–SBH09 (Sabah): JAKIM has no 2027 data yet.
-  - WLY02 (Labuan): JAKIM's 2027 data has Maghrib as 06:28 instead of 18:28
-    on 20–25 May 2027.
+  - SBH01–SBH09 (Sabah): JAKIM has no 2027 data yet (checked 24 Nov 2026;
+    Pejabat Mufti Negeri Sabah's site points to e-Solat and has no 2027 PDF).
   - SGR01–SGR03: replaced by the Selangor district zones above.
 
 ## Structure
