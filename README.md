@@ -25,10 +25,26 @@ districts yet, so these are kept apart from JAKIM's `SGRnn` codes to avoid clash
 | `SGRD08` | Klang |
 | `SGRD09` | Kuala Langat |
 
+## JAKIM zones — backup copy
+
+A copy of JAKIM e-Solat's 2027 schedule for every other zone, for when e-Solat
+is unavailable. Each file is JAKIM's response for 1 Jan – 31 Dec 2027, stored
+unchanged (fetched 24 Nov 2026).
+
+- **Included (47):** JHR01–04, KDH01–07, KTN01–02, MLK01, NGS01–03, PHG01–07,
+  PLS01, PNG01, PRK01–07, SWK01–09, TRG01–04, WLY01.
+- **Not included yet:**
+  - SBH01–SBH09 (Sabah): JAKIM has no 2027 data yet.
+  - WLY02 (Labuan): JAKIM's 2027 data has Maghrib as 06:28 instead of 18:28
+    on 20–25 May 2027.
+  - SGR01–SGR03: replaced by the Selangor district zones above.
+
 ## Structure
 ```text
 .
-└── SGRD01 … SGRD09/
+├── SGRD01 … SGRD09/   Selangor districts (Jabatan Mufti Negeri Selangor)
+│   └── 2027.json
+└── JHR01 … WLY01/     JAKIM e-Solat backup
     └── 2027.json
 ```
 
