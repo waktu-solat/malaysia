@@ -92,6 +92,13 @@ python3 backup_esolat.py --year 2027 --pending
   `https://purge.jsdelivr.net/gh/waktu-solat/malaysia@main/{ZONE}/2027.json`.
 - **The app picks it up without an update.** Phones that stored an estimate
   try e-Solat again once a day.
+- **It also watches for Selangor's districts.** It reports any zone e-Solat
+  adds to or drops from its list (today: 60 zones, Selangor still SGR01–SGR03),
+  and any `SGRD01`–`SGRD09` e-Solat starts to serve, with how far JAKIM's times
+  are from ours. It never saves over a district file: those are Jabatan Mufti
+  Negeri Selangor's times, so replacing one is a decision, not a sync.
+- **The last line says whether anything needs you:** `ACTION NEEDED: …` lines,
+  or `nothing to do`.
 
 ## Structure
 ```text

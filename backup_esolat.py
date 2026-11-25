@@ -15,6 +15,14 @@ pending.json lists the zones whose file here is not JAKIM's own yet (an
 estimate, or a copy we corrected). --pending checks only those, every day,
 and drops a zone from the list once JAKIM's answer for it passes and is saved.
 
+--pending also watches for Selangor's districts: any zone e-Solat adds to or
+drops from its list, and any SGRD01-SGRD09 it starts to serve. The SGRD files
+here are our own (Jabatan Mufti Negeri Selangor), so a JAKIM copy is compared
+and reported, never saved over them.
+
+The last line says whether anything needs you: "ACTION NEEDED: ..." lines, or
+"nothing to do".
+
 Usage:
     python3 backup_esolat.py --year 2027 [--zones zones.txt] [--dry-run]
     python3 backup_esolat.py --year 2027 --pending [--dry-run]
@@ -126,6 +134,93 @@ def fetch(zone: str, year: int):
     return zone, "ok", raw, validate(raw, zone, year)
 
 
+# Selangor's nine district zones start on 1 January 2027. Their files here are
+# the app's own codes and Jabatan Mufti Negeri Selangor's times, not JAKIM's.
+OLD_SELANGOR = ["SGR01", "SGR02", "SGR03"]
+SELANGOR_DISTRICTS = [f"SGRD{i:02d}" for i in range(1, 10)]
+
+
+def known_zones(root: str) -> set[str]:
+    """The JAKIM zones this repo knows: its JAKIM-coded folders, plus the old
+    Selangor zones, which have no folder since there is no 2027 for them."""
+    folders = {d for d in os.listdir(root)
+               if re.fullmatch(r"[A-Z]{3}\d{2}", d) and os.path.isdir(os.path.join(root, d))}
+    return folders | set(OLD_SELANGOR)
+
+
+def live_zones() -> set[str]:
+    """Every zone e-Solat's picker lists, whatever shape its code has (an
+    SGRD01 would slip past jakim_zones)."""
+    html = http(ZONE_PAGE).decode("utf-8", "ignore")
+    return set(re.findall(r"<option value='([A-Z]+\d+)'", html))
+
+
+def day_differences(ours: bytes, theirs: bytes) -> tuple[int, int]:
+    """Days on which JAKIM's times differ from ours, and the widest gap in
+    minutes, over the dates both files have."""
+    def m(t):
+        h, mi, _ = map(int, t.split(":"))
+        return h * 60 + mi
+
+    mine = {r["date"]: r for r in json.loads(ours)["prayerTime"]}
+    days = worst = 0
+    for r in json.loads(theirs)["prayerTime"]:
+        o = mine.get(r.get("date"))
+        if not o:
+            continue
+        gaps = [abs(m(r[k]) - m(o[k])) for k in ORDER
+                if TIME.match(str(r.get(k, ""))) and TIME.match(str(o.get(k, "")))]
+        if gaps and max(gaps):
+            days += 1
+            worst = max(worst, max(gaps))
+    return days, worst
+
+
+def selangor_watch(root: str, year: int) -> list[str]:
+    """What needs a look about Selangor's districts. Saves nothing."""
+    try:
+        live = live_zones()
+    except Exception as e:
+        return [f"could not read e-Solat's zone list ({e}); run again later"]
+    if not live:
+        return ["e-Solat's zone list came back empty (did the page change?)"]
+    known = known_zones(root)
+    added, gone = sorted(live - known), sorted(known - live)
+    news = []
+    if added:
+        news.append(f"e-Solat lists new zones: {' '.join(added)}")
+    if gone:
+        news.append(f"e-Solat no longer lists: {' '.join(gone)}")
+    print(f"zone list: {len(live)} zones"
+          f"{', new: ' + ' '.join(added) if added else ''}"
+          f"{', gone: ' + ' '.join(gone) if gone else ''}"
+          f"{'' if added or gone else ', no change'}")
+
+    served = []
+    for zone in SELANGOR_DISTRICTS:
+        # A week tells whether there is anything; the year only if there is.
+        probe = json.loads(http(API.format(zone=zone),
+                                {"datestart": f"{year}-01-01", "dateend": f"{year}-01-07"}))
+        time.sleep(1)
+        if probe.get("status") == "NO_RECORD!":
+            continue
+        served.append(zone)
+        _, _, raw, errs = fetch(zone, year)
+        ours = os.path.join(root, zone, f"{year}.json")
+        if errs:
+            news.append(f"JAKIM now serves {zone} {year}, but it fails validation: {errs}")
+        elif not os.path.exists(ours):
+            news.append(f"JAKIM now serves {zone} {year}; we have no file to compare")
+        else:
+            days, worst = day_differences(open(ours, "rb").read(), raw)
+            news.append(f"JAKIM now serves {zone} {year}: "
+                        + ("same times as ours" if not days else
+                           f"differs from ours on {days} days, by up to {worst} min")
+                        + " (not saved; ours stays until you decide)")
+    print(f"districts: {'on e-Solat: ' + ' '.join(served) if served else 'none on e-Solat yet'}")
+    return news
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--year", type=int, required=True)
@@ -183,6 +278,19 @@ def main() -> None:
         print(f"INVALID  : {len(bad)} (not saved)")
         for zone, errs in bad:
             print(f"   {zone}: {errs}")
+
+    actions = []
+    if written and not args.dry_run:
+        actions.append(f"saved JAKIM's file for {' '.join(written)}: commit, push, and purge "
+                       f"https://purge.jsdelivr.net/gh/waktu-solat/malaysia@main/{{ZONE}}/{args.year}.json")
+    elif done and not args.dry_run:
+        actions.append("pending.json changed: commit and push")
+    if args.pending:
+        actions += selangor_watch(args.root, args.year)
+    for a in actions:
+        print(f"ACTION NEEDED: {a}")
+    if not actions:
+        print("nothing to do")
     sys.exit(1 if bad else 0)
 
 
